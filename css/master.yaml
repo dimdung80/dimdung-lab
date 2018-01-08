@@ -1,0 +1,34 @@
+Description: >
+
+    This template deploys S3 buckets and roles with polcies for CSS Test css-assignment
+
+    Last Modified: 22nd September 2016
+    Author: Samal Dimdung <dimdung@gmail.com> 
+
+Resources:
+
+    s3test:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: https://s3.amazonaws.com/css-assignment/infrastructure/s3.yaml
+            Parameters:
+                EnvironmentName:    !Ref AWS::StackName
+                S3BucketName: css-assignment-11100
+    rolestest:
+        Type: AWS::CloudFormation::Stack 
+        Properties:
+            TemplateURL: https://s3.amazonaws.com/css-assignment/infrastructure/roles.yaml
+            Parameters: 
+                EnvironmentName: !Ref AWS::StackName
+
+
+
+
+#Outputs:
+
+ #   ProductServiceUrl: 
+ #       Description: The URL endpoint for the product service
+ #       Value: !Join [ "/", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "products" ]]
+ #   WebsiteServiceUrl: 
+ #       Description: The URL endpoint for the website service
+ #       Value: !Join ["", [ !GetAtt ALB.Outputs.LoadBalancerUrl, "/" ]]

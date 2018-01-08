@@ -1,0 +1,90 @@
+Description: >
+    Stack for creating S3Bucket for CSS Test S3
+
+Parameters:
+
+    EnvironmentName:
+        Description: Which environment is the bucket created into?
+        Type: String
+        #AllowedValues: [dev,stage,prod-int,prod-ext,mgmt]
+      
+    S3BucketName:
+        Description: Please name the S3 bucket according to standard namming convention (<awsregion>-<applicationame>-<purpose>-<businessunit>-<environment>)
+        Type: String
+    
+    S3PrincipalElement1:
+        Description: Enter the ARN of who/role should access the resource? (Whom do you want to give access to the bucket)
+        Type: String
+        Default: "arn:aws:iam::309815942436:role/TaskRole1"
+    S3PrincipalElement2:
+        Description: Enter the ARN of who/role should access the resource? (Whom do you want to give access to the bucket)
+        Type: String
+        Default: "arn:aws:iam::309815942436:role/TaskRole2"
+        
+    CostCenterTag:
+        Description: Please provide valid costcenter number?
+        Type: String
+        Default: "108"
+    
+    PointOfContactTag:
+        Description: Who is the point of contact for the current project?
+        Type: String
+        Default: "Samal Dimdung"
+    
+    CreatedByTag:
+        Description: Who is launching the stack?
+        Type: String
+        Default: "Samal Dimdung"
+        
+Resources:
+
+    S3Bucket:
+        Type: AWS::S3::Bucket
+        #DeletionPolicy: Retain
+        Properties:
+            AccessControl: Private
+            BucketName: !Ref S3BucketName
+            Tags:
+                - Key: Name
+                  Value: !Sub ${S3BucketName}
+                - Key: CostCenter
+                  Value: !Sub ${CostCenterTag}
+                - Key: PointOfContact
+                  Value: !Sub ${PointOfContactTag}                  
+                - Key: LaunchBy
+                  Value: !Sub ${CreatedByTag}                
+                
+    S3BucketReadPolicy:
+        Type: AWS::S3::BucketPolicy
+        Properties:
+            Bucket: {Ref: S3Bucket}
+            PolicyDocument:
+                Statement:
+                  -
+                    Action: ["s3:ListBucket", "s3:GetBucketLocation", "s3:ListBucketMultipartUploads", "s3:ListBucketVersions"]
+                    Effect: Allow
+                    #Principal: !Ref S3PrincipalElement1
+                    Principal:
+                        AWS: arn:aws:iam::309815942436:role/TaskRole2
+                    Resource:
+                      Fn::Join: ['', ['arn:aws:s3:::', {Ref: S3Bucket}]]
+                    Condition: 
+                      "StringEquals": 
+                        "aws:sourceVpce": "vpce-1a2b3c4d"
+                  - 
+                    Action: ["s3:GetObject","s3:GetObjectVersion","s3:PutObject", "s3:DeleteObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts"]
+                    Effect: Allow
+                    #Principal: !Ref S3PrincipalElement2
+                    Principal: 
+                        AWS: arn:aws:iam::309815942436:role/TaskRole1
+                    Resource:
+                      Fn::Join: ['', ['arn:aws:s3:::', {Ref: S3Bucket}, '/*' ]]
+                    Condition: 
+                      "StringEquals": 
+                        "aws:sourceVpce": "vpce-1a2b3c4d"
+                        
+Outputs:
+    
+    BucketName:
+        Value: !Ref 'S3Bucket'
+        Description: Name of the S3 bucket to be used.

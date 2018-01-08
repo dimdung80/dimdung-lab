@@ -1,0 +1,117 @@
+Description: >
+    Stack for IAM Roles with  for to access S3
+Parameters:
+    EnvironmentName: 
+      Description: AN Environment name that will be fprefixed to resoruce names 
+      Type: String
+
+    IAMPolicyName1:
+        Description: Name the policy which is to be attached to RoleName1 
+        Type: String
+        Default: "IAMPolicyName-1"
+
+    IAMPolicyName2: 
+        Description: Name the policy which is to be attached to RoleName2 
+        Type: String
+        Default: "IAMPolicyName-2"
+        
+    S3Bucket:
+        Description: Enter the S3Bucket to be accessed
+        Type: String
+        Default: "css-assignment-11100"
+    
+    IAMRoleNameOne:
+        Description: Name the Role which is to be attached 
+        Type: String
+        Default: "TaskRole1"
+    IAMRoleNameTwo:
+        Description: Name the Role which is to be attached 
+        Type: String
+        Default: "TaskRole2"    
+        
+Resources:
+    TaskRole1:
+        Type: AWS::IAM::Role
+        Description: This si Role1 Description
+        Properties:
+            AssumeRolePolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Principal:
+                    Service: "ec2.amazonaws.com"
+                  Action:
+                    - "sts:AssumeRole"
+            ManagedPolicyArns:
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+
+            Path: "/"
+            RoleName: !Ref IAMRoleNameOne
+            
+    TaskPolicies:
+        Type: "AWS::IAM::Policy"
+        Properties: 
+            PolicyName: !Ref IAMPolicyName1
+            PolicyDocument: 
+                Version: "2012-10-17"
+                Statement: 
+                  - 
+                    Effect: "Allow"
+                    Action: "s3:ListBucket"
+                    Resource:
+                      Fn::Join: ['', ['arn:aws:s3:::', {Ref: S3Bucket}]]
+                  - 
+                    Effect: "Allow"
+                    Action: "s3:*"
+                    Resource:
+                      Fn::Join: ['', ['arn:aws:s3:::', {Ref: S3Bucket}, '/*' ]]
+                  - 
+                    Effect: "Allow"
+                    Action: "s3:GetObject"
+                    Resource:
+                      Fn::Join: ['', ['arn:aws:s3:::', {Ref: S3Bucket}, '/*' ]]              
+            Roles: 
+              - 
+                Ref: "TaskRole1"
+    TaskRole2:
+        Type: AWS::IAM::Role
+        Description: This is roles two Description
+        Properties:
+            AssumeRolePolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Principal:
+                    Service: "ec2.amazonaws.com"
+                  Action:
+                    - "sts:AssumeRole"
+            ManagedPolicyArns:
+              - "arn:aws:iam::309815942436:policy/vpcflowlogs"
+            Path: "/"
+            RoleName: !Ref IAMRoleNameTwo
+            
+    TaskPolicies:
+        Type: "AWS::IAM::Policy"
+        Properties: 
+            PolicyName: !Ref IAMPolicyName2
+            PolicyDocument: 
+                Version: "2012-10-17"
+                Statement: 
+                  - 
+                    Effect: "Allow"
+                    Action: "s3:ListBucket"
+                    Resource:
+                      Fn::Join: ['', ['arn:aws:s3:::', {Ref: S3Bucket}]]
+                  - 
+                    Effect: "Allow"
+                    Action: "s3:PutObject"
+                    Resource:
+                      Fn::Join: ['', ['arn:aws:s3:::', {Ref: S3Bucket}, '/*' ]]
+                  - 
+                    Effect: "Allow"
+                    Action: "s3:GetObject"
+                    Resource:
+                      Fn::Join: ['', ['arn:aws:s3:::', {Ref: S3Bucket}, '/*' ]]               
+            Roles: 
+              - 
+                Ref: "TaskRole2"
