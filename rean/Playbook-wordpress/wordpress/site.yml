@@ -1,0 +1,13 @@
+---
+- name: Install WordPress, MariaDB, Nginx, and PHP-FPM
+  hosts: all
+  user: ec2-user
+  become: yes
+  become_user: root
+
+  roles:
+    - common
+    - mariadb
+    - nginx
+    - php-fpm
+    - wordpress

@@ -1,0 +1,168 @@
+Description: >
+    This template creates the Shared Security group for All the Tier i.e ELB, Web, App and Dbs for Rean-Cloud Clients
+Parameters:
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+        Default: Mgmt
+    
+    VPC:
+        Type: AWS::EC2::VPC::Id
+        Description: Choose which VPC the security groups should be deployed to
+
+    TenantTag:
+        Description: Enter the Tenant Name 
+        Type: String
+        Default: Rean-Cloud
+
+    SecurityLevelTag:
+        Description: Enter the Value of Secuirty Level ( FedRAMP, HIPAA, Standard )
+        Type: String
+        Default: HIPAA
+
+    POCTag: 
+        Description: Value for the Point of Contact
+        Type: String
+        Default: Nick Martinelli
+
+    CreatorTag: 
+        Description: Value for the Creator Tag
+        Type: String
+        Default: Samal Dimdung
+
+    CostCenterTag:
+        Description: Value for the Cost Center Tags
+        Type: String
+        Default: "DevOps-108"
+
+Resources:
+    ElbSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            VpcId: !Ref VPC
+            GroupDescription: Access to the ELB from Internet
+            SecurityGroupIngress:
+                # Wide open to Internet 
+                - IpProtocol: tcp
+                  CidrIp: 0.0.0.0/0
+                  FromPort: '80'
+                  ToPort: '80'
+                - IpProtocol: tcp
+                  CidrIp: 0.0.0.0/0
+                  FromPort: '443'
+                  ToPort: '443'
+            Tags: 
+                - Key: Name
+                  Value: !Sub SG-Shared-ELB-${EnvironmentName}-E
+                - Key: Tenant
+                  Value: !Ref TenantTag
+                - Key: SecurityLevel
+                  Value: !Ref SecurityLevelTag
+                - Key: PointOfContact
+                  Value: !Ref POCTag
+                - Key: Creator
+                  Value: !Ref CreatorTag
+                - Key: CostCenter 
+                  Value: !Ref CostCenterTag
+    WebSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            VpcId: !Ref VPC
+            GroupDescription: Access to the Web from ELB 
+            SecurityGroupIngress:
+                # Only allow inbound access to WorkdPress from the ELB
+                - SourceSecurityGroupId: !Ref ElbSecurityGroup
+                  IpProtocol: -1
+                - IpProtocol: tcp
+                  CidrIp: 0.0.0.0/0
+                  FromPort: '80'
+                  ToPort: '80'
+                - IpProtocol: tcp
+                  CidrIp: 0.0.0.0/0
+                  FromPort: '443'
+                  ToPort: '443'
+            Tags: 
+                - Key: Name
+                  Value: !Sub SG-Shared-Web-${EnvironmentName}-E
+                - Key: Tenant
+                  Value: !Ref TenantTag
+                - Key: SecurityLevel
+                  Value: !Ref SecurityLevelTag
+                - Key: PointOfContact
+                  Value: !Ref POCTag
+                - Key: Creator
+                  Value: !Ref CreatorTag
+                - Key: CostCenter 
+                  Value: !Ref CostCenterTag
+    AppSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            VpcId: !Ref VPC
+            GroupDescription: Access to the App from Web 
+            SecurityGroupIngress:
+                # Only allow inbound access to Web Subnets 
+                #- SourceSecurityGroupId: !Ref WebSecurityGroup
+                #  IpProtocol: -1
+                - IpProtocol: tcp
+                  SourceSecurityGroupId: !Ref WebSecurityGroup
+                  FromPort: '8443'
+                  ToPort: '8443'
+                - IpProtocol: tcp
+                  SourceSecurityGroupId: !Ref WebSecurityGroup
+                  FromPort: '8081'
+                  ToPort: '8081'
+            Tags: 
+                - Key: Name
+                  Value: !Sub SG-Shared-App-${EnvironmentName}-E
+                - Key: Tenant
+                  Value: !Ref TenantTag
+                - Key: SecurityLevel
+                  Value: !Ref SecurityLevelTag
+                - Key: PointOfContact
+                  Value: !Ref POCTag
+                - Key: Creator
+                  Value: !Ref CreatorTag
+                - Key: CostCenter 
+                  Value: !Ref CostCenterTag
+    DbsSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            VpcId: !Ref VPC
+            GroupDescription: Access to the Dbs from App 
+            SecurityGroupIngress:
+                # Only allow inbound access from only App Subnets
+                #- SourceSecurityGroupId: !Ref AppSecurityGroup
+                - IpProtocol: tcp
+                  SourceSecurityGroupId: !Ref AppSecurityGroup
+                  FromPort: '3306'
+                  ToPort: '3306'
+            Tags: 
+                - Key: Name
+                  Value: !Sub SG-Shared-Dbs-${EnvironmentName}-E
+                - Key: Tenant
+                  Value: !Ref TenantTag
+                - Key: SecurityLevel
+                  Value: !Ref SecurityLevelTag
+                - Key: PointOfContact
+                  Value: !Ref POCTag
+                - Key: Creator
+                  Value: !Ref CreatorTag
+                - Key: CostCenter 
+                  Value: !Ref CostCenterTag
+
+Outputs:
+    ElbSecurityGroup: 
+        Description: A reference to the security group for ELB Tier 
+        Value: !Ref ElbSecurityGroup
+
+    WebSecurityGroup: 
+        Description: A reference to the security group for Web Tier 
+        Value: !Ref WebSecurityGroup
+
+    AppSecurityGroup: 
+        Description: A reference to the security group for Appliation Tier 
+        Value: !Ref AppSecurityGroup
+
+    DbsSecurityGroup: 
+        Description: A reference to the security group for Dbs Tier 
+        Value: !Ref DbsSecurityGroup

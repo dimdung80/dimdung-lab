@@ -1,0 +1,135 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: his template creates EC2 instances and pull the code from the Githu/repo and configure WorkdPress
+Parameters:
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+    Default: Mgmt
+
+  WpInstanceType:
+    Description: Instance type for CDXF Engine Provisioning  MySQL db server
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m4.large
+
+  SSHKeyName:
+    Description: Name of an existing key, used for SSH login.
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: kp-rean-dimdung
+
+  WpSecurityGroupId:
+    Description: Security Group ID for access from Management (i.e. JumpBox)
+    Type: AWS::EC2::SecurityGroup::Id
+    Default: sg-44599931
+
+  BaseAMI:
+    Description: Base AMI to be used for All the Build 
+    Type: String
+    AllowedValues: 
+      - ami-6057e21a
+      - ami-c998b6b2
+      - ami-da05a4a0
+    Default: ami-c998b6b2
+
+  VpcId:
+    Description: VPC to use.
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-cc9d3bb5
+
+  WpSubnet:
+    Description: Subnet to be used
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-f880819d 
+    
+  TenantTag:
+    Description: Enter the Tenant Name 
+    Type: String
+    AllowedValues: 
+      - GSA
+      - NASA
+      - DOD
+      - DOJ 
+      - Rean-Cloud
+    Default: Rean-Cloud
+
+  SecurityLevelTag:
+    Description: Enter the Value of Secuirty Level (AWS Cloud Compliance)
+    Type: String
+    AllowedValues: 
+      - FedRAMP
+      - HIPAA
+      - Standard
+    Default: HIPAA
+
+  POCTag: 
+    Description: Value for the Point of Contact
+    Type: String
+    Default: Nick Martinelli
+
+  CreatorTag: 
+    Description: Value for the Creator Tag
+    Type: String
+    Default: Samal Dimdung
+
+  CostCenterTag:
+    Description: Value for the Cost Center Tags
+    Type: String
+    Default: "DevOps-108"
+
+Resources:
+  WpInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref 'BaseAMI'
+      SubnetId: !Ref 'WpSubnet'
+      SecurityGroupIds:
+        - !Ref 'WpSecurityGroupId'
+      InstanceType: !Ref 'WpInstanceType'
+      KeyName: !Ref 'SSHKeyName'
+      UserData: 
+        "Fn::Base64": !Sub |
+          #!/bin/bash
+          # Install EPEL repo for RHEL 7 
+          rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+
+          # Install git to clone Github repo 
+          yum install git -y 
+
+          # Install Pip packages 
+          yum install python-pip -y  
+
+          # Install Ansible after the PIP modules 
+          pip install ansible
+
+          #Set clone the git from the Github and run the playbook
+          cd /tmp/ 
+          #git -c http.sslVerify=false clone https://github.com/dimdung80/lab-rean.git
+          git -c http.sslVerify=false clone https://github.com/dimdung80/lab-rean/
+          #cd /tmp/lab-rean/workpress/
+          #ansible-playbook -i hosts site.yml 
+          #ansible-playbook -i hosts site.yml
+          ansible-playbook -i "localhost," -c local lab-rean/Playbook-wordpress/wordpress/site.yml
+
+      Tags: 
+      - Key: Name
+        Value: !Sub VM-Shared-WordPress-CM-${EnvironmentName}-E
+      - Key: Tenant
+        Value: !Ref TenantTag
+      - Key: SecurityLevel
+        Value: !Ref SecurityLevelTag
+      - Key: PointOfContact
+        Value: !Ref POCTag
+      - Key: Creator
+        Value: !Ref CreatorTag
+      - Key: CostCenter 
+        Value: !Ref CostCenterTag
+Outputs:
+  WebsiteURL:
+    Value: !Join ['', ['http://', !GetAtt 'WpInstance.PublicDnsName']]
+    Description: WordPress Website
