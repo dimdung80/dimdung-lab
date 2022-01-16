@@ -29,12 +29,12 @@ Parameters:
     PointOfContactTag:
         Description: Who is the point of contact for the current project?
         Type: String
-        Default: "Samal Dimdung"
+        Default: "Raj Dimdung"
     
     CreatedByTag:
         Description: Who is launching the stack?
         Type: String
-        Default: "Samal Dimdung"
+        Default: "Raj Dimdung"
         
 Resources:
 
