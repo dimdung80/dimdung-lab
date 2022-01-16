@@ -53,7 +53,7 @@ Parameters:
     CreatorTag: 
         Description: Value for the Creator Tag
         Type: String
-        Default: Samal Dimdung
+        Default: Raj Dimdung
 
     CostCenterTag:
         Description: Value for the Cost Center Tags
